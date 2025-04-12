@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  library-db:
+    image: 'postgres:latest'
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: library
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/
+
+  pgadmin-temp:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin       
+    ports:
+      - "8085:80"                
+    volumes:
+      - ./pgadmin-data/:/var/lib/pgadmin
