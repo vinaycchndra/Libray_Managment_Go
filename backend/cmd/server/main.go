@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/handlers"
+	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/routes"
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/db"
 )
 
@@ -38,5 +42,27 @@ func main() {
 
 	app := Config{DB: db_conn}
 
+	// Closing the db connection.
+	defer app.DB.Close()
+
 	app.Start()
+
+	router := gin.Default()
+
+	// CORS Middleware
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://*"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config.AllowCredentials = true
+
+	// Allowing router to use the cors middleware.
+	router.Use(cors.New(config))
+
+	apiRoutes := router.Group("/api")
+
+	{
+		routes.SetupGenericRoutes(apiRoutes, handlers.NewGenericHandler())
+	}
+	router.Run()
 }
