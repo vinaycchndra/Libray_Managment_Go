@@ -19,6 +19,7 @@ func New(dbPool *sql.DB) Models {
 
 type Models struct {
 	Author Author
+	Book   Book
 }
 
 type Author struct {
@@ -27,6 +28,20 @@ type Author struct {
 	About     string    `json:"about"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Book struct {
+	ID         int       `json:"int"`
+	Title      string    `json:"title"`
+	Category   string    `json:"category"`
+	Publisher  string    `json:"pubisher"`
+	BookCount  int       `json:"book_count"`
+	Price      float32   `json:"price"`
+	FinePerDay float32   `json:"fine_per_day"`
+	AuthorId   int       `json:"author_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Archive    bool      `json:"archive"`
 }
 
 // Get author with id
@@ -70,6 +85,7 @@ func (a *Author) insertAuthor(author Author) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	return newId, nil
 }
+
+// Create a book
