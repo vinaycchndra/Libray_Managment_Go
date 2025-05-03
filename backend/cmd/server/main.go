@@ -11,6 +11,7 @@ import (
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/handlers"
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/routes"
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/db"
+	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/services"
 )
 
 type Config struct {
@@ -63,6 +64,7 @@ func main() {
 
 	{
 		routes.SetupGenericRoutes(apiRoutes, handlers.NewGenericHandler())
+		routes.SetupAdminRoutes(apiRoutes, handlers.NewAdminHandler(services.NewLibraryService(db_conn)))
 	}
 	router.Run()
 }
