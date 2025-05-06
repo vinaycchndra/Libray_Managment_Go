@@ -17,12 +17,14 @@ func New(dbPool *sql.DB) Models {
 	return Models{
 		Author: &Author{},
 		Book:   &Book{},
+		User:   &User{},
 	}
 }
 
 type Models struct {
 	Author *Author
 	Book   *Book
+	User   *User
 }
 
 type Author struct {
@@ -45,6 +47,18 @@ type Book struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	Archive    bool      `json:"archive"`
+}
+
+type User struct {
+	ID          int    `json:"int"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	PhoneNumber string `json:"phone_number"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+	IsActive    bool   `json:"is_active"`
+	IsAdmin     bool   `json:"is_admin"`
 }
 
 // Get author with id
@@ -167,16 +181,71 @@ func (b *Book) GetBookWithId(id int) (*Book, error) {
 		&book.ID,
 		&book.Title,
 		&book.Category,
+		&book.Publisher,
 		&book.BookCount,
 		&book.Price,
 		&book.FinePerDay,
+		&book.AuthorId,
 		&book.CreatedAt,
 		&book.UpdatedAt,
-		&book.AuthorId,
+		&book.Archive,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 	return &book, nil
+}
+
+func (u *User) CreateUser(user User) (*User, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout*2)
+
+	defer cancel()
+
+	// User exists check
+	var user_exists bool
+
+	user_exists_query := `select case when count(*) > 0 then True else False end from user where email = $1;`
+	row := db.QueryRowContext(ctx, user_exists_query, user.Email)
+	err := row.Scan(&user_exists)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if user_exists {
+		return nil, errors.New(fmt.Sprintf("User with email: %s already exists", user.Email))
+	}
+
+	// Inserting the user into db
+	var inserted_user User
+	insert_stmt := `insert into user (name, email, password, phone_number, created_at, updated_at, is_active, is_admin) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id, name, email, password, phone_number, created_at, updated_at, is_active, is_admin;`
+
+	row = db.QueryRowContext(ctx, insert_stmt,
+		user.Name,
+		user.Email,
+		user.Password,
+		user.PhoneNumber,
+		user.CreatedAt,
+		user.UpdatedAt,
+		user.IsActive,
+		user.IsAdmin)
+
+	err = row.Scan(
+		&inserted_user.ID,
+		&inserted_user.Name,
+		&inserted_user.Email,
+		&inserted_user.Password,
+		&inserted_user.PhoneNumber,
+		&inserted_user.CreatedAt,
+		&inserted_user.UpdatedAt,
+		&inserted_user.IsActive,
+		&inserted_user.IsAdmin,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return &inserted_user, nil
 }

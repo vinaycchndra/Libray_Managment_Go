@@ -17,11 +17,10 @@ func NewAdminHandler(libService *services.LibraryService) *AdminHandler {
 	}
 }
 
-func (h *AdminHandler) getBook(c *gin.Context) {
+func (h *AdminHandler) GetBookWithBookId(c *gin.Context) {
 	type requestBody struct {
 		BookId int `json:"book_id"`
 	}
-
 	var request_body requestBody
 
 	err := c.BindJSON(&request_body)
@@ -31,4 +30,11 @@ func (h *AdminHandler) getBook(c *gin.Context) {
 		return
 	}
 
+	book, err := h.libraryService.GetBook(request_body.BookId)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, book)
 }

@@ -5,6 +5,6 @@ import (
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/handlers"
 )
 
-func SetupAdminRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
-	router.GET("/get-book", handler.GetBookWithBookId)
+func LoginRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
+	router.POST("/login", handler.GetBookWithBookId)
 }
