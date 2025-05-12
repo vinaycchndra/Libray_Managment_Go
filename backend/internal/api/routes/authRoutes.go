@@ -5,6 +5,10 @@ import (
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/api/handlers"
 )
 
-func LoginRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
-	router.POST("/login", handler.GetBookWithBookId)
+func SetupAuthRoutes(router *gin.RouterGroup, handler *handlers.AuthHandler) {
+	authRouter := router.Group("/auth")
+	{
+		authRouter.POST("/register", handler.Register)
+		// router.POST("/login", handler.Login)
+	}
 }

@@ -50,15 +50,15 @@ type Book struct {
 }
 
 type User struct {
-	ID          int    `json:"int"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	PhoneNumber string `json:"phone_number"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	IsActive    bool   `json:"is_active"`
-	IsAdmin     bool   `json:"is_admin"`
+	ID          int       `json:"int"`
+	Name        string    `json:"name"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	PhoneNumber string    `json:"phone_number"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	IsActive    bool      `json:"is_active"`
+	IsAdmin     bool      `json:"is_admin"`
 }
 
 // Get author with id
@@ -206,7 +206,7 @@ func (u *User) CreateUser(user User) (*User, error) {
 	// User exists check
 	var user_exists bool
 
-	user_exists_query := `select case when count(*) > 0 then True else False end from user where email = $1;`
+	user_exists_query := `select case when count(*) > 0 then True else False end from users where email = $1;`
 	row := db.QueryRowContext(ctx, user_exists_query, user.Email)
 	err := row.Scan(&user_exists)
 
@@ -220,7 +220,7 @@ func (u *User) CreateUser(user User) (*User, error) {
 
 	// Inserting the user into db
 	var inserted_user User
-	insert_stmt := `insert into user (name, email, password, phone_number, created_at, updated_at, is_active, is_admin) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id, name, email, password, phone_number, created_at, updated_at, is_active, is_admin;`
+	insert_stmt := `insert into users (name, email, password, phone_number, created_at, updated_at, is_active, is_admin) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id, name, email, password, phone_number, created_at, updated_at, is_active, is_admin;`
 
 	row = db.QueryRowContext(ctx, insert_stmt,
 		user.Name,

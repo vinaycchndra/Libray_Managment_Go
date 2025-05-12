@@ -62,9 +62,13 @@ func main() {
 
 	apiRoutes := router.Group("/api")
 
+	// Initialising the service handler
+	service_handler := services.NewLibraryService(db_conn)
+
 	{
 		routes.SetupGenericRoutes(apiRoutes, handlers.NewGenericHandler())
-		routes.SetupAdminRoutes(apiRoutes, handlers.NewAdminHandler(services.NewLibraryService(db_conn)))
+		routes.SetupAdminRoutes(apiRoutes, handlers.NewAdminHandler(service_handler))
+		routes.SetupAuthRoutes(apiRoutes, handlers.NewAuthHandler(service_handler))
 	}
 	router.Run()
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/data"
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/utils"
@@ -47,6 +48,8 @@ func (l *LibraryService) RegisterUser(name, email, password, phone_number string
 		PhoneNumber: phone_number,
 		IsActive:    is_active,
 		IsAdmin:     is_admin,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	user, err := l.model.User.CreateUser(userInput)
