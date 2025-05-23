@@ -249,3 +249,34 @@ func (u *User) CreateUser(user User) (*User, error) {
 	}
 	return &inserted_user, nil
 }
+
+func (u *User) GetUserWithEmail(user User) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+
+	defer cancel()
+
+	// User exists check
+	var existing_user User
+
+	get_user_query := `select * from users where email = $1;`
+
+	row := db.QueryRowContext(ctx, get_user_query, user.Email)
+
+	err := row.Scan(
+		&existing_user.ID,
+		&existing_user.Name,
+		&existing_user.Email,
+		&existing_user.Password,
+		&existing_user.PhoneNumber,
+		&existing_user.CreatedAt,
+		&existing_user.UpdatedAt,
+		&existing_user.IsActive,
+		&existing_user.IsAdmin,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, errors.New(fmt.Sprintf("User with email %s does not exist.", user.Email))
+	}
+
+	return &existing_user, nil
+}

@@ -2,6 +2,8 @@ package services
 
 import (
 	"database/sql"
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/vinaycchndra/Libray_Managment_Go/backend/backend/internal/data"
@@ -59,4 +61,32 @@ func (l *LibraryService) RegisterUser(name, email, password, phone_number string
 	}
 
 	return user, nil
+}
+
+func (l *LibraryService) LoginUser(email, password string) (string, error) {
+	userInput := data.User{
+		Email: email,
+	}
+
+	user, err := l.model.User.GetUserWithEmail(userInput)
+
+	if err != nil {
+		return "", err
+	}
+
+	if is_same := utils.CheckPasswordHash(password, user.Password); !is_same {
+		return "", errors.New("Invalid password")
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	token, err := utils.CreateToken(strconv.Itoa(user.ID), user.Email, user.IsAdmin)
+
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

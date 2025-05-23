@@ -18,7 +18,7 @@ type ParsedToken struct {
 	IsAdmin bool
 }
 
-func CreateToken(user_id, email, is_admin string) (string, error) {
+func CreateToken(user_id, email string, is_admin bool) (string, error) {
 	now := time.Now()
 	token_duration, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRY_DURATION"))
 
@@ -76,8 +76,14 @@ func ParseAndValidateToken(tokenString string) (*ParsedToken, error) {
 	if int64(expiry_time) < time.Now().Unix() {
 		return nil, errors.New("Token expired")
 	}
+
+	user_id, err := strconv.Atoi(claims["user_id"].(string))
+
+	if err != nil {
+		return nil, err
+	}
 	parsed_token := ParsedToken{
-		UserId:  claims["user_id"].(int),
+		UserId:  user_id,
 		Email:   claims["email"].(string),
 		IsAdmin: claims["is_admin"].(bool),
 	}
@@ -87,11 +93,9 @@ func ParseAndValidateToken(tokenString string) (*ParsedToken, error) {
 // Hash password
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-
 	if err != nil {
 		return "", err
 	}
-
 	return string(bytes), nil
 }
 

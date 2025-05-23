@@ -44,17 +44,10 @@ func (a *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	hashed_password, err := utils.HashPassword(request_body.Password)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "", "error": err.Error()})
-		return
-	}
-
 	registered_user, err := a.libraryService.RegisterUser(
 		request_body.Name,
 		request_body.Email,
-		hashed_password,
+		request_body.Password,
 		request_body.PhoneNumber,
 		false,
 		false,
@@ -85,7 +78,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	token, err := h.libraryService.LoginUser(request_body.Email, request_body.Password)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "", "token": "", "error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged in successfully",
+		"token":   token,
+		"error":   "",
 	})
 }
