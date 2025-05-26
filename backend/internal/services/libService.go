@@ -90,3 +90,41 @@ func (l *LibraryService) LoginUser(email, password string) (string, error) {
 
 	return token, nil
 }
+
+func (l *LibraryService) InsertAuthor(name, about string) (*data.Author, error) {
+	authorInput := data.Author{
+		Name:  name,
+		About: about,
+	}
+
+	// Add the author.
+	addedAuthor, err := l.model.Author.InsertAuthor(authorInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return addedAuthor, nil
+}
+
+func (l *LibraryService) GetAuthor(id int, name string) ([]data.Author, error) {
+	var output_authors []data.Author
+
+	// Get the author with id.
+	if id != 0 {
+		output_author, err := l.model.Author.GetAuthorWithId(id)
+		if err != nil {
+			return nil, err
+		}
+		output_authors = append(output_authors, output_author)
+		return output_authors, nil
+
+	} else {
+
+		output_authors, err := l.model.Author.GetAuthorWithDetails(name)
+
+		if err != nil {
+			return nil, err
+		}
+		return output_authors, nil
+	}
+}

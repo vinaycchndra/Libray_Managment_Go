@@ -9,6 +9,7 @@ import (
 func SetupAdminRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
 	adminRouter := router.Group("/admin")
 	adminRouter.Use(middlewares.AuthMiddleware())
-
+	adminRouter.POST("/add-author", handler.InsertAuthor)
+	adminRouter.GET("/get-author", handler.GetAuthor)
 	adminRouter.GET("/get-book", handler.GetBookWithBookId)
 }

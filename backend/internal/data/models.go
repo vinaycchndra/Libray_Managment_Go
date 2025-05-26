@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -62,7 +63,7 @@ type User struct {
 }
 
 // Get author with id
-func (a *Author) GetAuthorWithId(id int) (*Author, error) {
+func (a *Author) GetAuthorWithId(id int) (Author, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
@@ -80,29 +81,73 @@ func (a *Author) GetAuthorWithId(id int) (*Author, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return author, err
 	}
-	return &author, nil
+	return author, nil
+}
+
+// Get authors details with name and about details
+func (a *Author) GetAuthorWithDetails(name string) ([]Author, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*dbTimeout)
+
+	defer cancel()
+
+	var authors []Author
+
+	if name != "" {
+		stmt := `select * from author where name ilike $1;`
+		name_param := "%" + strings.ToLower(name) + "%"
+		rows, err := db.QueryContext(ctx, stmt, name_param)
+		if err != nil {
+			return nil, err
+		}
+		for rows.Next() {
+			var author Author
+			err = rows.Scan(&author.ID, &author.Name, &author.About, &author.CreatedAt, &author.UpdatedAt)
+			if err != nil {
+				return nil, err
+			}
+			authors = append(authors, author)
+		}
+	} else {
+		stmt := `select * from author order by created_at desc;`
+		rows, err := db.QueryContext(ctx, stmt)
+		for rows.Next() {
+			var author Author
+			err = rows.Scan(&author.ID, &author.Name, &author.About, &author.CreatedAt, &author.UpdatedAt)
+			if err != nil {
+				return nil, err
+			}
+			authors = append(authors, author)
+		}
+	}
+	return authors, nil
 }
 
 // Create author
-func (a *Author) InsertAuthor(author Author) (int, error) {
+func (a *Author) InsertAuthor(author Author) (*Author, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 
 	defer cancel()
 
-	var newId int
+	var addedAuthor Author
 
-	stmt := `insert into author (name, about, created_at, updated_at) values ($1, $2, $3, $4) returning id;`
+	stmt := `insert into author (name, about, created_at, updated_at) values ($1, $2, $3, $4) returning id, name, about, created_at, updated_at;`
 
 	row := db.QueryRowContext(ctx, stmt, author.Name, author.About, time.Now(), time.Now())
 
-	err := row.Scan(&newId)
+	err := row.Scan(
+		&addedAuthor.ID,
+		&addedAuthor.Name,
+		&addedAuthor.About,
+		&addedAuthor.CreatedAt,
+		&addedAuthor.UpdatedAt,
+	)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return newId, nil
+	return &addedAuthor, nil
 }
 
 // Create a book
