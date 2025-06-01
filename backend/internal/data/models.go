@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/sanggonlee/gosq"
 )
 
 var db *sql.DB
@@ -95,7 +97,7 @@ func (a *Author) GetAuthorWithDetails(name string) ([]Author, error) {
 	var authors []Author
 
 	if name != "" {
-		stmt := `select * from author where name ilike $1;`
+		stmt := `select * from author where name ilike $1 order by created_at desc;`
 		name_param := "%" + strings.ToLower(name) + "%"
 		rows, err := db.QueryContext(ctx, stmt, name_param)
 		if err != nil {
@@ -188,15 +190,147 @@ func (b *Book) InsertBook(book Book) (*Book, error) {
 
 	// Inserting book into the db.
 	var inserted_book Book
-	stmt := `insert into book (title, category, publisher, book_count, price, fine_per_day, created_at, updated_at, author_id) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id, title, category,  publisher, book_count, price, fine_per_day, created_at, updated_at, author_id;`
+	stmt := `insert into book (title, category, publisher, book_count, price, fine_per_day, created_at, updated_at, author_id) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id, title, category,  publisher, book_count, price, fine_per_day, created_at, updated_at, author_id;`
 
 	row = db.QueryRowContext(ctx, stmt, book.Title, book.Category, book.Publisher, book.BookCount, book.Price,
-		book.FinePerDay, book.AuthorId, time.Now(), time.Now())
+		book.FinePerDay, time.Now(), time.Now(), book.AuthorId)
+	// id, title, category,  publisher, book_count, price, fine_per_day, created_at, updated_at, author_id;
+	err = row.Scan(
+		&inserted_book.ID,
+		&inserted_book.Title,
+		&inserted_book.Category,
+		&inserted_book.Publisher,
+		&inserted_book.BookCount,
+		&inserted_book.Price,
+		&inserted_book.FinePerDay,
+		&inserted_book.CreatedAt,
+		&inserted_book.UpdatedAt,
+		&inserted_book.AuthorId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return &inserted_book, nil
+}
+
+// Update book
+func (b *Book) UpdateBook(book_id int, input_json map[string]any) (*Book, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout*3)
+	defer cancel()
+
+	type fields struct {
+		Title        bool
+		Category     bool
+		Publisher    bool
+		Book_count   bool
+		Price        bool
+		Fine_per_day bool
+		Author_id    bool
+	}
+
+	field := fields{}
+
+	query_count := 0
+
+	query_args := make([]any, 0, 7)
+
+	if title_value, ok := input_json["title"]; ok {
+		field.Title = true
+		query_count++
+		query_args = append(query_args, title_value)
+	}
+
+	if category_value, ok := input_json["category"]; ok {
+		field.Category = true
+		query_count++
+		query_args = append(query_args, category_value)
+
+		//Category check for the book
+		var category_exists bool
+		category_check_query := `select case when count(*) > 0 then True else False end from category where category_name = $1;`
+
+		row := db.QueryRowContext(ctx, category_check_query, category_value.(string))
+		err := row.Scan(&category_exists)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !category_exists {
+			return nil, errors.New(fmt.Sprintf("%v this category does not exists.", category_value))
+		}
+
+	}
+
+	if publisher_value, ok := input_json["publisher"]; ok {
+		field.Publisher = true
+		query_count++
+		query_args = append(query_args, publisher_value)
+	}
+
+	if book_count_value, ok := input_json["book_count"]; ok {
+		field.Book_count = true
+		query_count++
+		query_args = append(query_args, int(book_count_value.(float64)))
+	}
+
+	if price_value, ok := input_json["price"]; ok {
+		field.Price = true
+		query_count++
+		query_args = append(query_args, float32(price_value.(float64)))
+	}
+
+	if fine_per_day_value, ok := input_json["fine_per_day"]; ok {
+		field.Fine_per_day = true
+		query_count++
+		query_args = append(query_args, float32(fine_per_day_value.(float64)))
+	}
+
+	if author_id_value, ok := input_json["author_id"]; ok {
+		field.Author_id = true
+		query_count++
+		query_args = append(query_args, float32(author_id_value.(float64)))
+	}
+
+	if !(field.Title || field.Category || field.Publisher || field.Book_count || field.Price || field.Fine_per_day || field.Author_id) {
+		return nil, errors.New(fmt.Sprintf("Nonthing to update for book with book_id :: %v", book_id))
+	}
+
+	query_args = append(query_args, time.Now())
+	query_args = append(query_args, book_id)
+	query_count = query_count + 2
+
+	annotation_list := make([]any, 0, query_count)
+
+	for i := 1; i <= query_count; i++ {
+		annotation_list = append(annotation_list, i)
+	}
+
+	query, err := gosq.Compile(`
+				update book set
+	 			{{ [if] .Title [then]  title = $%d, }}
+				{{ [if] .Category [then] category = $%d, }}
+				{{ [if] .Publisher [then] publisher = $%d, }}
+				{{ [if] .Book_count [then] book_count = $%d, }}
+				{{ [if] .Price [then] price = $%d, }}
+				{{ [if] .Fine_per_day [then] fine_per_day = $%d, }} 
+				{{ [if] .Author_id [then] author_id = $%d, }}  
+				updated_at = $%d where id = $%d 
+				returning id, title, category,  publisher, book_count, 
+				price, fine_per_day, created_at, updated_at, author_id;
+				`, field)
+
+	query = fmt.Sprintf(query, annotation_list...)
+	row := db.QueryRowContext(ctx, query, query_args...)
+
+	var inserted_book Book
 
 	err = row.Scan(
 		&inserted_book.ID,
 		&inserted_book.Title,
 		&inserted_book.Category,
+		&inserted_book.Publisher,
 		&inserted_book.BookCount,
 		&inserted_book.Price,
 		&inserted_book.FinePerDay,

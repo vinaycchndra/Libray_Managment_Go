@@ -12,4 +12,6 @@ func SetupAdminRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
 	adminRouter.POST("/add-author", handler.InsertAuthor)
 	adminRouter.GET("/get-author", handler.GetAuthor)
 	adminRouter.GET("/get-book", handler.GetBookWithBookId)
+	adminRouter.POST("/add-book", handler.InsertBook)
+	adminRouter.PUT("/update-book/:book_id", handler.UpdateBook)
 }

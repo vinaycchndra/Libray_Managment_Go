@@ -24,14 +24,19 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token := auth_header_slice[1]
-		parded_token, err := utils.ParseAndValidateToken(token)
+		parsed_token, err := utils.ParseAndValidateToken(token)
 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.Set("user_id", parded_token.UserId)
-		c.Set("email_id", parded_token.Email)
+
+		if !parsed_token.IsAdmin {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "You don't have access to these endpoints."})
+			return
+		}
+		c.Set("user_id", parsed_token.UserId)
+		c.Set("email_id", parsed_token.Email)
 		c.Next()
 	}
 }

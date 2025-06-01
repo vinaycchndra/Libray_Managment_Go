@@ -30,6 +30,34 @@ func (l *LibraryService) GetBook(id int) (*data.Book, error) {
 	return book, nil
 }
 
+func (l *LibraryService) InsertBook(title, category, publisher string, book_count int, price float32, fine_per_day float32, author_id int) (*data.Book, error) {
+	book_to_insert := data.Book{
+		Title:      title,
+		Category:   category,
+		Publisher:  publisher,
+		BookCount:  book_count,
+		Price:      price,
+		FinePerDay: fine_per_day,
+		AuthorId:   author_id,
+	}
+	book, err := l.model.Book.InsertBook(book_to_insert)
+
+	if err != nil {
+		return nil, err
+	}
+	return book, nil
+}
+
+func (l *LibraryService) UpdateBook(book_id int, input_json map[string]any) (*data.Book, error) {
+
+	book, err := l.model.Book.UpdateBook(book_id, input_json)
+
+	if err != nil {
+		return nil, err
+	}
+	return book, nil
+}
+
 func (l *LibraryService) RegisterUser(name, email, password, phone_number string, is_active, is_admin bool) (*data.User, error) {
 	err := utils.ValidatePassword(password)
 
