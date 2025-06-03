@@ -64,6 +64,19 @@ type User struct {
 	IsAdmin     bool      `json:"is_admin"`
 }
 
+type Book_with_name struct {
+	ID         int       `json:"id"`
+	Title      string    `json:"title"`
+	Category   string    `json:"category"`
+	Publisher  string    `json:"publisher"`
+	Price      float32   `json:"price"`
+	FinePerDay float32   `json:"fine_per_day"`
+	BookCount  int       `json:"book_count"`
+	AuthorName string    `json:"author_name"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 // Get author with id
 func (a *Author) GetAuthorWithId(id int) (Author, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
@@ -290,7 +303,7 @@ func (b *Book) UpdateBook(book_id int, input_json map[string]any) (*Book, error)
 	if author_id_value, ok := input_json["author_id"]; ok {
 		field.Author_id = true
 		query_count++
-		query_args = append(query_args, float32(author_id_value.(float64)))
+		query_args = append(query_args, int(author_id_value.(float64)))
 	}
 
 	if !(field.Title || field.Category || field.Publisher || field.Book_count || field.Price || field.Fine_per_day || field.Author_id) {
@@ -374,6 +387,101 @@ func (b *Book) GetBookWithId(id int) (*Book, error) {
 		return nil, err
 	}
 	return &book, nil
+}
+
+func (b *Book) GetBook(input_json map[string]any) ([]*Book_with_name, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout*3)
+	defer cancel()
+
+	type fields struct {
+		Title      bool
+		Category   bool
+		Publisher  bool
+		AuthorName bool
+	}
+
+	var query string
+	field := fields{}
+	query_count := 0
+	query_args := make([]any, 0, 4)
+	results := make([]*Book_with_name, 0)
+
+	if title_value, ok := input_json["title"]; ok {
+		field.Title = true
+		query_count++
+		query_args = append(query_args, title_value)
+	}
+
+	if category_value, ok := input_json["category"]; ok {
+		field.Category = true
+		query_count++
+		query_args = append(query_args, category_value)
+
+	}
+
+	if publisher_value, ok := input_json["publisher"]; ok {
+		field.Publisher = true
+		query_count++
+		query_args = append(query_args, publisher_value)
+	}
+
+	if author_id_value, ok := input_json["author_name"]; ok {
+		field.AuthorName = true
+		query_count++
+		query_args = append(query_args, author_id_value.(string))
+	}
+
+	if !(field.Title || field.Category || field.Publisher || field.AuthorName) {
+		query = `select * from book order by created_at desc;`
+	} else {
+		annotation_list := make([]any, 0, query_count)
+		for i := 1; i <= query_count; i++ {
+			annotation_list = append(annotation_list, i)
+		}
+		query, err := gosq.Compile(`
+					select t1.id, t1.title, t1.category, t1.publisher, t1.price, t1.fine_per_day,
+					t1.book_count, t2.name, t1.created_at, t1.updated_at 
+					from book as t1 inner join author as t2 where 1=1,    
+					{{ [if] .Title [then]     and t1.title ilike $%d, }}
+					{{ [if] .Category [then]  and t1.category ilike $%d, }}
+					{{ [if] .Publisher [then] and t1.publisher ilike $%d, }}
+					{{ [if] .Author_id [then] and t2.name ilike $%d }} order by created_at desc;`,
+			field)
+
+		if err != nil {
+			return nil, err
+		}
+		query = fmt.Sprintf(query, annotation_list...)
+	}
+
+	rows, err := db.QueryContext(ctx, query, query_args...)
+
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var output_book Book_with_name
+
+		err = rows.Scan(
+			&output_book.ID,
+			&output_book.Title,
+			&output_book.Category,
+			&output_book.Publisher,
+			&output_book.Price,
+			&output_book.FinePerDay,
+			&output_book.BookCount,
+			&output_book.AuthorName,
+			&output_book.CreatedAt,
+			&output_book.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &output_book)
+	}
+
+	return results, nil
 }
 
 func (u *User) CreateUser(user User) (*User, error) {

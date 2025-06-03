@@ -19,26 +19,37 @@ func NewAdminHandler(libService *services.LibraryService) *AdminHandler {
 	}
 }
 
-func (h *AdminHandler) GetBookWithBookId(c *gin.Context) {
-	type requestBody struct {
-		BookId int `json:"book_id"`
-	}
-	var request_body requestBody
+func (h *AdminHandler) QueryBooks(c *gin.Context) {
 
-	err := c.BindJSON(&request_body)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "", "error": err.Error()})
-		return
-	}
-
-	book, err := h.libraryService.GetBook(request_body.BookId)
+	var input_json map[string]any
+	dec := json.NewDecoder(c.Request.Body)
+	err := dec.Decode(&input_json)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, book)
+
+	if book_id, ok := input_json["book_id"]; ok {
+		book, err := h.libraryService.GetBook(int(book_id.(float64)))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		book_list := []any{book}
+		c.JSON(http.StatusOK, book_list)
+		return
+	} else {
+		book_list, err := h.libraryService.GetBooks(input_json)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, book_list)
+		return
+	}
+
 }
 
 type authorRequestBody struct {

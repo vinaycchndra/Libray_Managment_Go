@@ -156,3 +156,12 @@ func (l *LibraryService) GetAuthor(id int, name string) ([]data.Author, error) {
 		return output_authors, nil
 	}
 }
+
+func (l *LibraryService) GetBooks(input_json map[string]any) ([]*data.Book_with_name, error) {
+	book_list, err := l.model.Book.GetBook(input_json)
+
+	if err != nil {
+		return nil, err
+	}
+	return book_list, nil
+}

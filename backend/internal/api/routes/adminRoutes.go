@@ -11,7 +11,8 @@ func SetupAdminRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
 	adminRouter.Use(middlewares.AuthMiddleware())
 	adminRouter.POST("/add-author", handler.InsertAuthor)
 	adminRouter.GET("/get-author", handler.GetAuthor)
-	adminRouter.GET("/get-book", handler.GetBookWithBookId)
+	adminRouter.GET("/get-book", handler.QueryBooks)
 	adminRouter.POST("/add-book", handler.InsertBook)
 	adminRouter.PUT("/update-book/:book_id", handler.UpdateBook)
+
 }
