@@ -399,8 +399,10 @@ func (b *Book) GetBook(input_json map[string]any) ([]*Book_with_name, error) {
 		Publisher  bool
 		AuthorName bool
 	}
-
+	fmt.Println("here is 1")
 	var query string
+	var err error
+
 	field := fields{}
 	query_count := 0
 	query_args := make([]any, 0, 4)
@@ -409,51 +411,55 @@ func (b *Book) GetBook(input_json map[string]any) ([]*Book_with_name, error) {
 	if title_value, ok := input_json["title"]; ok {
 		field.Title = true
 		query_count++
-		query_args = append(query_args, title_value)
+		query_args = append(query_args, "%"+title_value.(string)+"%")
 	}
 
 	if category_value, ok := input_json["category"]; ok {
 		field.Category = true
 		query_count++
-		query_args = append(query_args, category_value)
+		query_args = append(query_args, "%"+category_value.(string)+"%")
 
 	}
 
 	if publisher_value, ok := input_json["publisher"]; ok {
 		field.Publisher = true
 		query_count++
-		query_args = append(query_args, publisher_value)
+		query_args = append(query_args, "%"+publisher_value.(string)+"%")
 	}
 
 	if author_id_value, ok := input_json["author_name"]; ok {
 		field.AuthorName = true
 		query_count++
-		query_args = append(query_args, author_id_value.(string))
+		query_args = append(query_args, "%"+author_id_value.(string)+"%")
 	}
-
+	fmt.Println("here is 2")
 	if !(field.Title || field.Category || field.Publisher || field.AuthorName) {
-		query = `select * from book order by created_at desc;`
+		query = `select t1.id, t1.title, t1.category, t1.publisher, t1.price, t1.fine_per_day,
+					t1.book_count, t2.name, t1.created_at, t1.updated_at 
+					from book as t1 inner join author as t2 on t1.author_id = t2.id order by t1.created_at desc;`
+		fmt.Println(query, "inside the block")
 	} else {
 		annotation_list := make([]any, 0, query_count)
+
 		for i := 1; i <= query_count; i++ {
 			annotation_list = append(annotation_list, i)
 		}
-		query, err := gosq.Compile(`
+
+		query, err = gosq.Compile(`
 					select t1.id, t1.title, t1.category, t1.publisher, t1.price, t1.fine_per_day,
 					t1.book_count, t2.name, t1.created_at, t1.updated_at 
-					from book as t1 inner join author as t2 where 1=1,    
-					{{ [if] .Title [then]     and t1.title ilike $%d, }}
-					{{ [if] .Category [then]  and t1.category ilike $%d, }}
-					{{ [if] .Publisher [then] and t1.publisher ilike $%d, }}
-					{{ [if] .Author_id [then] and t2.name ilike $%d }} order by created_at desc;`,
+					from book as t1 inner join author as t2 on t1.author_id = t2.id where 1=1    
+					{{ [if] .Title [then]     and t1.title ilike $%d }}
+					{{ [if] .Category [then]  and t1.category ilike $%d }}
+					{{ [if] .Publisher [then] and t1.publisher ilike $%d }}
+					{{ [if] .AuthorName [then] and t2.name ilike $%d }} order by t1.created_at desc;`,
 			field)
-
 		if err != nil {
 			return nil, err
 		}
 		query = fmt.Sprintf(query, annotation_list...)
 	}
-
+	fmt.Println(query, "outside the block")
 	rows, err := db.QueryContext(ctx, query, query_args...)
 
 	if err != nil {

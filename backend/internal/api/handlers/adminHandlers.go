@@ -178,3 +178,7 @@ func (h *AdminHandler) UpdateBook(c *gin.Context) {
 	c.JSON(http.StatusCreated, book)
 	return
 }
+
+func (h *AdminHandler) LandBook(c *gin.Context) {
+
+}
