@@ -30,11 +30,11 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("could not create migration instance: %w", err)
 	}
 
-	// if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-	// 	return fmt.Errorf("could not run migrations: %w", err)
-	// }
-	if err := m.Steps(4); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return fmt.Errorf("could not run down migrations: %w", err)
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("could not run migrations: %w", err)
 	}
+	// if err := m.Steps(4); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	// 	return fmt.Errorf("could not run down migrations: %w", err)
+	// }
 	return nil
 }

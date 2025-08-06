@@ -165,3 +165,13 @@ func (l *LibraryService) GetBooks(input_json map[string]any) ([]*data.Book_with_
 	}
 	return book_list, nil
 }
+
+func (l *LibraryService) LendBooks(input_json map[string]any) (*data.BookBorrowList, error) {
+	book_list, err := l.model.BookBorrowList.CreateBookBorrowList(input_json)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return book_list, nil
+}

@@ -179,6 +179,23 @@ func (h *AdminHandler) UpdateBook(c *gin.Context) {
 	return
 }
 
-func (h *AdminHandler) LandBook(c *gin.Context) {
+func (h *AdminHandler) LendBook(c *gin.Context) {
+	var input_json map[string]any
+	dec := json.NewDecoder(c.Request.Body)
+	err := dec.Decode(&input_json)
 
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	book_list, err := h.libraryService.LendBooks(input_json)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, book_list)
+	return
 }

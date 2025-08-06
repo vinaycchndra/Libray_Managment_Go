@@ -18,16 +18,18 @@ const dbTimeout = time.Second * 3
 func New(dbPool *sql.DB) Models {
 	db = dbPool
 	return Models{
-		Author: &Author{},
-		Book:   &Book{},
-		User:   &User{},
+		Author:         &Author{},
+		Book:           &Book{},
+		User:           &User{},
+		BookBorrowList: &BookBorrowList{},
 	}
 }
 
 type Models struct {
-	Author *Author
-	Book   *Book
-	User   *User
+	Author         *Author
+	Book           *Book
+	User           *User
+	BookBorrowList *BookBorrowList
 }
 
 type Author struct {
@@ -75,6 +77,25 @@ type Book_with_name struct {
 	AuthorName string    `json:"author_name"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type BookBorrowList struct {
+	ID        int            `json:"id"`
+	DueDate   time.Time      `json:"due_date"`
+	UserId    int            `json:"user_id"`
+	Closed    bool           `json:"closed"`
+	FinePaid  float32        `json:"fine_paid"`
+	CreateAt  time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	BookList  []*BookBorrorw `json:"lended_books"`
+}
+
+type BookBorrorw struct {
+	ID       int  `json:"id"`
+	BookId   int  `json:"book_id"`
+	ListId   int  `json:"list_id"`
+	Returned bool `json:"returned"`
+	Extended bool `json:"extended"`
 }
 
 // Get author with id
@@ -572,4 +593,8 @@ func (u *User) GetUserWithEmail(user User) (*User, error) {
 	}
 
 	return &existing_user, nil
+}
+
+func (b *BookBorrowList) CreateBookBorrowList(input_json map[string]any) (*BookBorrowList, error) {
+	return nil, nil
 }

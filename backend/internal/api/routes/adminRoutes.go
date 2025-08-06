@@ -14,6 +14,6 @@ func SetupAdminRoutes(router *gin.RouterGroup, handler *handlers.AdminHandler) {
 	adminRouter.GET("/get-book", handler.QueryBooks)
 	adminRouter.POST("/add-book", handler.InsertBook)
 	adminRouter.PUT("/update-book/:book_id", handler.UpdateBook)
-	// adminRouter.POST("/land-book/", handler.LandBook)
+	adminRouter.POST("/lend-book", handler.LendBook)
 
 }
